@@ -27,12 +27,10 @@
 //!
 //! More details can be found in the link: <https://articles.manugarg.com/aboutelfauxiliaryvectors.html>
 
-extern crate alloc;
-
 use alloc::{string::String, vec::Vec};
 use memory_addr::VirtAddr;
 
-use crate::auxv::{AuxvEntry, AuxvType};
+use crate::auxv::{AuxType, AuxVec};
 
 struct UserStack {
     sp: usize,
@@ -66,7 +64,7 @@ impl UserStack {
     }
 }
 
-fn init_stack(args: &[String], envs: &[String], auxv: &mut [AuxvEntry], sp: usize) -> Vec<u8> {
+fn init_stack(args: &[String], envs: &[String], auxv: &mut [AuxVal], sp: usize) -> Vec<u8> {
     let mut data = Vec::new();
     let mut stack = UserStack::new(sp);
     // define a random string with 16 bytes
@@ -88,10 +86,10 @@ fn init_stack(args: &[String], envs: &[String], auxv: &mut [AuxvEntry], sp: usiz
     assert!(stack.get_sp() % 16 == 0);
     // Push auxiliary vectors
     for auxv_entry in auxv.iter_mut() {
-        if auxv_entry.get_type() == AuxvType::RANDOM {
+        if auxv_entry.get_type() == AuxType::RANDOM {
             *auxv_entry.value_mut_ref() = random_str_pos;
         }
-        if auxv_entry.get_type() == AuxvType::EXECFN {
+        if auxv_entry.get_type() == AuxType::EXECFN {
             *auxv_entry.value_mut_ref() = argv_slice[0];
         }
     }
@@ -135,11 +133,8 @@ fn init_stack(args: &[String], envs: &[String], auxv: &mut [AuxvEntry], sp: usiz
 pub fn app_stack_region(
     args: &[String],
     envs: &[String],
-    auxv: &mut [AuxvEntry],
-    stack_base: VirtAddr,
-    stack_size: usize,
+    auxv: AuxVec,
+    stack_top: VirtAddr,
 ) -> Vec<u8> {
-    let ustack_bottom = stack_base;
-    let ustack_top = ustack_bottom + stack_size;
-    init_stack(args, envs, auxv, ustack_top.into())
+    init_stack(args, envs, auxv, stack_top.into())
 }

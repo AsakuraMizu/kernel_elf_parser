@@ -1,13 +1,11 @@
 //! ELF information parsed from the ELF file
-//!
 
-extern crate alloc;
 use alloc::vec::Vec;
 
 use memory_addr::VirtAddr;
 use page_table_entry::MappingFlags;
 
-use crate::auxv::{AuxvEntry, AuxvType};
+use crate::auxv::{AuxType, AuxVec};
 
 /// ELF Program Header applied to the kernel
 ///
@@ -142,25 +140,16 @@ impl<'a> ELFParser<'a> {
     /// * `pagesz` - The page size of the system
     ///
     /// Details about auxiliary vectors are described in <https://articles.manugarg.com/aboutelfauxiliaryvectors.html>
-    pub fn auxv_vector(&self, pagesz: usize) -> [AuxvEntry; 16] {
-        [
-            AuxvEntry::new(AuxvType::PHDR, self.phdr()),
-            AuxvEntry::new(AuxvType::PHENT, self.phent()),
-            AuxvEntry::new(AuxvType::PHNUM, self.phnum()),
-            AuxvEntry::new(AuxvType::PAGESZ, pagesz),
-            AuxvEntry::new(AuxvType::BASE, self.base()),
-            AuxvEntry::new(AuxvType::FLAGS, 0),
-            AuxvEntry::new(AuxvType::ENTRY, self.entry()),
-            AuxvEntry::new(AuxvType::HWCAP, 0),
-            AuxvEntry::new(AuxvType::CLKTCK, 100),
-            AuxvEntry::new(AuxvType::PLATFORM, 0),
-            AuxvEntry::new(AuxvType::UID, 0),
-            AuxvEntry::new(AuxvType::EUID, 0),
-            AuxvEntry::new(AuxvType::GID, 0),
-            AuxvEntry::new(AuxvType::EGID, 0),
-            AuxvEntry::new(AuxvType::RANDOM, 0),
-            AuxvEntry::new(AuxvType::EXECFN, 0),
-        ]
+    pub fn aux_vector(&self, pagesz: usize) -> AuxVec {
+        let mut auxv = AuxVec::new();
+        auxv.set(AuxType::PHDR, self.phdr());
+        auxv.set(AuxType::PHENT, self.phent());
+        auxv.set(AuxType::PHNUM, self.phnum());
+        auxv.set(AuxType::PAGESZ, pagesz);
+        auxv.set(AuxType::BASE, self.base());
+        auxv.set(AuxType::ENTRY, self.entry());
+        auxv.set(AuxType::CLKTCK, 100);
+        auxv
     }
 
     /// Read all [`self::ELFPH`] with `LOAD` type of the elf file.

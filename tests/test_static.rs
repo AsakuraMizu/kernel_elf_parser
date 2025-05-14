@@ -42,7 +42,7 @@ fn test_ustack(elf_parser: &ELFParser) {
     // let phent = auxv.get(&AT_PHENT).unwrap();
     // assert_eq!(*phent, 56);
     auxv.iter().for_each(|entry| {
-        if entry.get_type() == kernel_elf_parser::AuxvType::PHENT {
+        if entry.get_type() == kernel_elf_parser::AuxType::PHENT {
             assert_eq!(entry.value(), 56);
         }
     });

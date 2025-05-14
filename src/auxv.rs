@@ -1,8 +1,12 @@
+use core::fmt;
+
+use alloc::collections::btree_map::BTreeMap;
+
 /// Represents the type of an auxiliary vector entry.
-#[derive(Clone, Copy, PartialEq, Eq)]
-#[allow(non_camel_case_types, unused)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[allow(non_camel_case_types)]
 #[repr(usize)]
-pub enum AuxvType {
+pub enum AuxType {
     /// End of vector
     NULL = 0,
     /// Entry should be ignored
@@ -91,37 +95,24 @@ pub enum AuxvType {
     MINSIGSTKSZ = 51,
 }
 
-/// Represents an entry in the auxiliary vector.
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub struct AuxvEntry {
-    /// The type of the auxiliary vector entry.
-    auxv_type: AuxvType,
-    /// The value associated with the auxiliary vector entry.
-    auxv_val: usize,
+#[derive(Clone, Default)]
+pub struct AuxVec(BTreeMap<AuxType, usize>);
+
+impl fmt::Debug for AuxVec {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_map().entries(self.0.iter()).finish()
+    }
 }
 
-impl AuxvEntry {
-    /// Create a new auxv entry
-    pub fn new(auxv_type: AuxvType, auxv_val: usize) -> Self {
-        Self {
-            auxv_type,
-            auxv_val,
+impl AuxVec {
+    pub const fn new() -> Self {
+        AuxVec(BTreeMap::new())
+    }
+
+    pub fn set(&mut self, ty: AuxType, val: usize) {
+        if matches!(ty, AuxType::NULL | AuxType::IGNORE) {
+            return;
         }
-    }
-
-    /// Get [self::AuxvType] of the auxv entry
-    pub fn get_type(&self) -> AuxvType {
-        self.auxv_type
-    }
-
-    /// Get the value of the auxv entry
-    pub fn value(&self) -> usize {
-        self.auxv_val
-    }
-
-    /// Get a mutable reference to the value of the auxv entry
-    pub fn value_mut_ref(&mut self) -> &mut usize {
-        &mut self.auxv_val
+        self.0.insert(ty, val);
     }
 }
